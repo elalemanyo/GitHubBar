@@ -1,56 +1,61 @@
 # GitHubBar
 
-A macOS menu bar app for keeping an eye on GitHub: notifications, pull requests, review requests — or anything else you can express as a GitHub search. Styled after [Primer](https://primer.style/).
+GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pull requests and review requests one click away. Styled after GitHub's own [Primer](https://primer.style/) design system.
 
 ## Features
 
-- **Configurable tabs.** Each tab has a title, an [Octicon](https://primer.style/octicons/), a query and an attention rule.
-  - **Search tabs** use the same syntax as the github.com search bar (`is:pr is:open review-requested:@me`). All search tabs are fetched in a single GraphQL request.
-  - **Notification tabs** filter your unread notifications locally (`reason:mention,team_mention -repo:owner/noisy`). All notification tabs share one conditional REST request.
-- **Presets** for the common cases: Inbox, Mentions, Review requests, My pull requests, Failing CI, Ready to merge, Assigned to me…
-- **Menu bar icon** turns orange when a tab needs attention — either because it has items, or because new items appeared since you last looked.
-- Pull request rows show state, CI status and review decision — notification rows too.
-- Mark notifications as **read** or **done** (hover a row, or use the footer to clear a whole tab).
-- Optional **macOS notifications** per tab when new items appear.
-- **Snooze** the menu bar highlight (and notifications) for an hour, four hours or until tomorrow.
-- **Keyboard shortcuts** inside the popover (press `?`), plus a configurable global shortcut to open it.
-- **Export / import** tab setups as JSON to share them.
-- Token stored in the Keychain.
+- Tabs for anything you want to watch: notifications, review requests, your pull requests, failing CI, or any GitHub search
+- Presets for the common cases, or write your own query
+- The menubar icon lights up when something needs your attention
+- Pull requests show their state, CI status and review decision
+- Mark notifications as read or done, one by one or a whole tab at once
+- Optional macOS notifications when new items show up
+- Snooze the highlight when you need to focus
+- Keyboard shortcuts that match GitHub's inbox (`E`, `⇧I`, `J`/`K`), plus a global shortcut to open it
+- Export and import your tabs to share them
 
-## Building
+## Installation
 
-Requires macOS 14+, Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+1. Download the latest `.dmg` from [Releases](https://github.com/elalemanyo/GitHubBar/releases)
+2. Move `GitHubBar.app` to your Applications folder
+3. Open the app - it will appear in your menubar
 
-```sh
-brew install xcodegen
-xcodegen
-open GitHubBar.xcodeproj
-```
+The app isn't notarized by Apple, so macOS blocks the first launch. Open **System Settings → Privacy & Security** and click **Open Anyway** (only once).
 
-The Xcode project, `Info.plist` and entitlements are generated from `project.yml` and not checked in.
+## Setup
 
-## Token
+1. [Create a classic personal access token](https://github.com/settings/tokens/new?scopes=repo,notifications&description=GitHubBar) with the `repo` and `notifications` scopes
+2. Click the GitHubBar icon in the menubar and open Settings
+3. Paste the token and click **Save**
 
-Create a **classic** personal access token with the `repo` and `notifications` scopes:
-<https://github.com/settings/tokens/new?scopes=repo,notifications&description=GitHubBar>
+The token is stored in your Keychain. Fine-grained tokens work for search tabs, but GitHub doesn't let them read notifications.
 
-Fine-grained tokens work for search tabs, but GitHub doesn't let them read notifications.
+## Usage
 
-## Notification query syntax
+- **Click** an item to open it on GitHub (notifications are marked as read)
+- **Hover** a notification to mark it as read or done
+- **Right-click** an item for more actions (copy link, mark as read or done)
+- Press **`?`** in the popover to see all keyboard shortcuts
+
+### Tabs
+
+Every tab has a title, an icon and a query. Add, edit and reorder them in **Settings → Tabs**.
+
+**Search tabs** use the same syntax as the search bar on github.com, for example `is:pr is:open review-requested:@me`. See [GitHub's search syntax](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests).
+
+**Notification tabs** filter your unread notifications:
 
 | Qualifier | Example |
 |---|---|
 | `reason:` | `reason:review_requested`, `reason:mention,team_mention` |
-| `type:` | `type:PullRequest`, `type:pr`, `type:Issue`, `type:Release`, `type:ci` |
+| `type:` | `type:pr`, `type:Issue`, `type:Release`, `type:ci` |
+| `state:` | `state:open`, `-state:merged,closed` |
 | `repo:` | `repo:owner/name` |
 | `org:` | `org:owner` |
-| `state:` | `state:open`, `-state:merged,closed` (`open` includes drafts) |
-| `is:` | `is:unread` |
-| text | words match the notification title |
 
-Terms are combined with AND, comma-separated values with OR, and a leading `-` excludes. See [notification reasons](https://docs.github.com/en/rest/activity/notifications#about-notification-reasons).
+Commas mean "any of", a leading `-` excludes, and plain words match the title. See the [notification reasons](https://docs.github.com/en/rest/activity/notifications#about-notification-reasons).
 
-## Keyboard shortcuts
+### Keyboard shortcuts
 
 | Keys | Action |
 |---|---|
@@ -61,23 +66,37 @@ Terms are combined with AND, comma-separated values with OR, and a leading `-` e
 | `⇧I` | Mark notification as read |
 | `⌘R` | Refresh |
 | `?` | Show shortcuts |
-| `Esc` | Close the popover |
+| `Esc` | Close |
 
-The global "Open GitHubBar" shortcut is set in Settings → Account (uses [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts)).
+Set a global shortcut to open GitHubBar from anywhere in **Settings → Account**.
 
-## Octicons
+## Requirements
 
-Icons are bundled from [`@primer/octicons`](https://github.com/primer/octicons) (MIT). To add icons, edit the list in `scripts/update-octicons.sh` and run it (requires Node).
-The app icon is rendered from the `mark-github` Octicon by `swift scripts/make-app-icon.swift`.
+- macOS 14.0 (Sonoma) or later
 
-## Project layout
+## Contributing
 
+Ideas, bug reports and pull requests are all welcome. If something doesn't work or you'd love a new feature, [open an issue](https://github.com/elalemanyo/GitHubBar/issues) and let's talk about it.
+
+To run it locally you need Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+
+```sh
+brew install xcodegen
+xcodegen generate
+open GitHubBar.xcodeproj   # then press ⌘R
 ```
-GitHubBar/
-  App/        App entry point (MenuBarExtra + Settings)
-  Core/       GitHub client (REST + GraphQL), Keychain, notification filter
-  Models/     Tab configuration, presets, feed items
-  Store/      AppState: polling, results, attention logic, persistence
-  UI/         Popover, rows, settings
-  UI/Primer/  Primer color tokens, Octicons, Primer-style components
-```
+
+A quick map of the code:
+
+- `GitHubBar/Core/` - GitHub client (REST + GraphQL), Keychain, notification filter, system notifications
+- `GitHubBar/Store/` - app state: polling, results, attention logic
+- `GitHubBar/UI/` - popover, settings, and Primer-style components
+- `scripts/` - helpers to build the DMG, update the bundled [Octicons](https://primer.style/octicons/) and render the app icon
+
+Releases are built by GitHub Actions when a `v*` tag is pushed.
+
+Not sure where to start? Small things help too: trying new queries, improving the docs, or sharing your favorite tabs.
+
+## License
+
+MIT

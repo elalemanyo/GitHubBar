@@ -25,6 +25,9 @@ targets:
       path: GitHubBar/Info.plist
       properties:
         CFBundleDisplayName: GitHubBar
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHumanReadableCopyright: "Your GitHub inbox in the menu bar."
         LSApplicationCategoryType: public.app-category.developer-tools
         LSUIElement: true
     entitlements:
