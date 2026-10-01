@@ -1,0 +1,34 @@
+name: GitHubBar
+options:
+  bundleIdPrefix: com.elalemanyo
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  GitHubBar:
+    type: application
+    platform: macOS
+    sources:
+      - path: GitHubBar
+    info:
+      path: GitHubBar/Info.plist
+      properties:
+        CFBundleDisplayName: GitHubBar
+        LSApplicationCategoryType: public.app-category.developer-tools
+        LSUIElement: true
+    entitlements:
+      path: GitHubBar/GitHubBar.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.elalemanyo.GitHubBar
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        COMBINE_HIDPI_IMAGES: YES
