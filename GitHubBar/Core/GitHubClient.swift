@@ -114,6 +114,13 @@ struct GitHubClient: Sendable {
         _ = try await send(request)
     }
 
+    /// Marks the thread as done, which also removes it from the github.com inbox.
+    func markThreadDone(id: String) async throws {
+        var request = request(path: "/notifications/threads/\(id)")
+        request.httpMethod = "DELETE"
+        _ = try await send(request)
+    }
+
     // MARK: - Search
 
     /// Runs several GitHub searches in a single GraphQL request, one alias per query.
@@ -135,24 +142,16 @@ struct GitHubClient: Sendable {
         query(\(variables)) {
         \(fields)
         }
-        \(Self.searchFragments)
+        \(Self.itemFragments)
         """
 
-        var variableValues: [String: String] = [:]
+        var variableValues: [String: Any] = [:]
         for (index, entry) in queries.enumerated() {
             variableValues["q\(index)"] = entry.query
         }
 
-        var request = request(path: "/graphql")
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: [
-            "query": document,
-            "variables": variableValues,
-        ])
-
-        let (data, _) = try await send(request)
-        let response = try Self.decoder.decode(GraphQLSearchResponse.self, from: data)
+        let data = try await graphQL(document, variables: variableValues)
+        let response = try Self.decoder.decode(GraphQLResponse<SearchConnection>.self, from: data)
 
         var errorsByAlias: [String: String] = [:]
         var globalErrors: [String] = []
@@ -184,7 +183,7 @@ struct GitHubClient: Sendable {
     }
 
     // `state` is aliased because PullRequestState and IssueState can't share a response name.
-    private static let searchFragments = """
+    private static let itemFragments = """
     fragment PR on PullRequest {
       id title url updatedAt number isDraft reviewDecision
       prState: state
@@ -200,7 +199,67 @@ struct GitHubClient: Sendable {
     }
     """
 
+    // MARK: - Issue & pull request lookup
+
+    struct SubjectRef: Hashable {
+        let owner: String
+        let name: String
+        let number: Int
+    }
+
+    /// Fetches the current state of issues and pull requests (state, CI, review, author),
+    /// 50 per request. Subjects that can't be found or accessed are left out.
+    func lookUp(_ refs: Set<SubjectRef>) async throws -> [SubjectRef: FeedItem] {
+        let refs = Array(refs)
+        var found: [SubjectRef: FeedItem] = [:]
+
+        for start in stride(from: 0, to: refs.count, by: 50) {
+            let chunk = refs[start..<min(start + 50, refs.count)]
+            var declarations: [String] = []
+            var fields: [String] = []
+            var variables: [String: Any] = [:]
+            for (index, ref) in chunk.enumerated() {
+                declarations.append("$o\(index): String!, $r\(index): String!, $n\(index): Int!")
+                fields.append("  s\(index): repository(owner: $o\(index), name: $r\(index)) { issueOrPullRequest(number: $n\(index)) { __typename ...PR ...Issue } }")
+                variables["o\(index)"] = ref.owner
+                variables["r\(index)"] = ref.name
+                variables["n\(index)"] = ref.number
+            }
+
+            let document = """
+            query(\(declarations.joined(separator: ", "))) {
+            \(fields.joined(separator: "\n"))
+            }
+            \(Self.itemFragments)
+            """
+
+            let data = try await graphQL(document, variables: variables)
+            let response = try Self.decoder.decode(GraphQLResponse<RepositorySubject>.self, from: data)
+            // Per-alias errors (deleted repo, lost access) are expected and ignored.
+            guard let payload = response.data else {
+                throw GitHubError.graphQL(response.errors?.first?.message ?? "Lookup failed.")
+            }
+            for (index, ref) in chunk.enumerated() {
+                if let item = (payload["s\(index)"] ?? nil)?.issueOrPullRequest?.feedItem {
+                    found[ref] = item
+                }
+            }
+        }
+        return found
+    }
+
     // MARK: - Transport
+
+    private func graphQL(_ document: String, variables: [String: Any]) async throws -> Data {
+        var request = request(path: "/graphql")
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "query": document,
+            "variables": variables,
+        ])
+        return try await send(request).0
+    }
 
     private func request(path: String, query: [URLQueryItem] = []) -> URLRequest {
         var components = URLComponents(url: Self.apiBase.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
@@ -255,14 +314,9 @@ struct GitHubClient: Sendable {
 
 // MARK: - GraphQL decoding
 
-private struct GraphQLSearchResponse: Decodable {
-    let data: [String: SearchConnection?]?
+private struct GraphQLResponse<Value: Decodable>: Decodable {
+    let data: [String: Value?]?
     let errors: [GraphQLError]?
-
-    struct SearchConnection: Decodable {
-        let issueCount: Int
-        let nodes: [SearchNode?]
-    }
 
     struct GraphQLError: Decodable {
         let message: String
@@ -282,6 +336,15 @@ private struct GraphQLSearchResponse: Decodable {
             }
         }
     }
+}
+
+private struct SearchConnection: Decodable {
+    let issueCount: Int
+    let nodes: [SearchNode?]
+}
+
+private struct RepositorySubject: Decodable {
+    let issueOrPullRequest: SearchNode?
 }
 
 private struct SearchNode: Decodable {

@@ -4,8 +4,11 @@ import SwiftUI
 struct ItemRow: View {
     let item: FeedItem
     let isNew: Bool
+    var isSelected = false
     let onOpen: () -> Void
+    /// Set for notifications only.
     let onMarkRead: (() -> Void)?
+    let onMarkDone: (() -> Void)?
 
     @State private var isHovering = false
 
@@ -40,24 +43,24 @@ struct ItemRow: View {
 
             Spacer(minLength: 4)
 
-            VStack(alignment: .trailing, spacing: 6) {
-                if let status = item.checkStatus {
-                    Octicon(name: status.icon)
-                        .foregroundStyle(status.color)
-                        .help(status.help)
+            if isHovering || isSelected, let onMarkRead, let onMarkDone {
+                HStack(spacing: 0) {
+                    IconButton(icon: "read", help: "Mark as read · ⇧I", action: onMarkRead)
+                    IconButton(icon: "check", help: "Done · E", action: onMarkDone)
                 }
-                if isNew {
-                    Circle()
-                        .fill(Primer.accentFg)
-                        .frame(width: 8, height: 8)
-                        .help("New since you last looked")
-                }
+                .padding(.vertical, -4)
+            } else {
+                trailingIndicators
             }
-            .padding(.top, 2)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(isHovering ? Primer.rowHover : .clear)
+        .background(isSelected ? Primer.accentFg.opacity(0.1) : isHovering ? Primer.rowHover : .clear)
+        .overlay(alignment: .leading) {
+            if isSelected {
+                Rectangle().fill(Primer.accentFg).frame(width: 2)
+            }
+        }
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .onTapGesture(perform: onOpen)
@@ -67,11 +70,29 @@ struct ItemRow: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(item.url.absoluteString, forType: .string)
             }
-            if let onMarkRead {
+            if let onMarkRead, let onMarkDone {
                 Divider()
                 Button("Mark as Read", action: onMarkRead)
+                Button("Mark as Done", action: onMarkDone)
             }
         }
+    }
+
+    private var trailingIndicators: some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            if let status = item.checkStatus {
+                Octicon(name: status.icon)
+                    .foregroundStyle(status.color)
+                    .help(status.help)
+            }
+            if isNew {
+                Circle()
+                    .fill(Primer.accentFg)
+                    .frame(width: 8, height: 8)
+                    .help("New since you last looked")
+            }
+        }
+        .padding(.top, 2)
     }
 
     private var repositoryLine: String {

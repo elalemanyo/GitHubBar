@@ -7,6 +7,7 @@ struct TabEditor: View {
     @State private var testResult: String?
     @State private var isTesting = false
     @State private var showIconPicker = false
+    @State private var notificationsDenied = false
 
     private static let searchDocs = URL(string: "https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests")!
     private static let reasonDocs = URL(string: "https://docs.github.com/en/rest/activity/notifications#about-notification-reasons")!
@@ -53,13 +54,22 @@ struct TabEditor: View {
             } footer: {
                 queryHelp
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
             Section {
                 Picker("Highlight menu bar icon", selection: $tab.attention) {
                     ForEach(AttentionRule.allCases) { Text($0.label).tag($0) }
                 }
+                Toggle("Notify me about new items", isOn: notifyBinding)
+                if notificationsDenied {
+                    Text("Notifications are turned off for GitHubBar. Allow them in System Settings → Notifications.")
+                        .font(.footnote)
+                        .foregroundStyle(Primer.dangerFg)
+                }
+            } footer: {
+                Text("New items are posted as macOS notifications. Nothing is sent while snoozed.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -79,14 +89,33 @@ struct TabEditor: View {
         case .search:
             VStack(alignment: .leading, spacing: 4) {
                 Text("Same syntax as the search bar on github.com. Use `@me` for yourself. Covers issues and pull requests.")
-                Link("Search syntax reference…", destination: Self.searchDocs)
+                    .foregroundStyle(.secondary)
+                Link("Search syntax reference", destination: Self.searchDocs)
+                    .foregroundStyle(Primer.accentFg)
             }
         case .notifications:
             VStack(alignment: .leading, spacing: 4) {
-                Text("Filters your unread notifications. Qualifiers: `reason:` `type:` `repo:` `org:`. Separate values with commas to match any, prefix with `-` to exclude. Plain words match the title. Leave empty for all.")
-                Link("Notification reasons…", destination: Self.reasonDocs)
+                Text("Filters your unread notifications. Qualifiers: `reason:` `type:` `repo:` `org:` `state:` (open, draft, merged, closed). Separate values with commas to match any, prefix with `-` to exclude, e.g. `-state:merged,closed`. Plain words match the title. Leave empty for all.")
+                    .foregroundStyle(.secondary)
+                Link("Notification reasons", destination: Self.reasonDocs)
+                    .foregroundStyle(Primer.accentFg)
             }
         }
+    }
+
+    /// Turning notifications on asks for macOS permission first.
+    private var notifyBinding: Binding<Bool> {
+        Binding(
+            get: { tab.notify },
+            set: { enabled in
+                guard enabled else {
+                    tab.notify = false
+                    return
+                }
+                let tabID = tab.id
+                Task { notificationsDenied = !(await state.enableNotifications(for: tabID)) }
+            }
+        )
     }
 
     private func runTest() {

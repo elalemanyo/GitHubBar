@@ -2,7 +2,7 @@ import Foundation
 
 /// Search-like filter for notification tabs, evaluated locally.
 ///
-///     reason:mention,team_mention -reason:ci_activity type:pr repo:owner/name org:owner fix
+///     reason:mention,team_mention -reason:ci_activity type:pr -state:merged,closed repo:owner/name org:owner fix
 ///
 /// - Terms are ANDed; comma-separated values within a term are ORed.
 /// - A leading `-` negates a term.
@@ -10,8 +10,8 @@ import Foundation
 struct NotificationFilter {
     struct Term: Equatable {
         enum Field: String, CaseIterable {
-            case reason, type, repo, org
-            case state = "is"
+            case reason, type, repo, org, state
+            case status = "is"
         }
 
         let field: Field?
@@ -56,14 +56,15 @@ struct NotificationFilter {
         self.unknownQualifiers = unknown
     }
 
-    func matches(_ notification: GitHubNotification) -> Bool {
+    /// `kind` is the subject's looked-up kind, needed for `state:`. Without it, `state:` never matches.
+    func matches(_ notification: GitHubNotification, kind: FeedItem.Kind? = nil) -> Bool {
         terms.allSatisfy { term in
-            let hit = term.values.contains { Self.value($0, matches: term.field, in: notification) }
+            let hit = term.values.contains { Self.value($0, matches: term.field, in: notification, kind: kind) }
             return hit != term.negated
         }
     }
 
-    private static func value(_ value: String, matches field: Term.Field?, in n: GitHubNotification) -> Bool {
+    private static func value(_ value: String, matches field: Term.Field?, in n: GitHubNotification, kind: FeedItem.Kind?) -> Bool {
         switch field {
         case .reason:
             return n.reason.lowercased() == value
@@ -74,6 +75,16 @@ struct NotificationFilter {
         case .org:
             return n.repository.owner.login.lowercased() == value
         case .state:
+            switch (value, kind) {
+            case ("open", .pullRequest(.open)), ("open", .pullRequest(.draft)), ("open", .issue(.open)),
+                 ("draft", .pullRequest(.draft)),
+                 ("merged", .pullRequest(.merged)),
+                 ("closed", .pullRequest(.closed)), ("closed", .issue(.closed)), ("closed", .issue(.notPlanned)):
+                return true
+            default:
+                return false
+            }
+        case .status:
             switch value {
             case "unread": return n.unread
             case "read": return !n.unread

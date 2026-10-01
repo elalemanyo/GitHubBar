@@ -30,6 +30,14 @@ extension GitHubNotification {
         return Int(url.lastPathComponent)
     }
 
+    /// Reference for looking up the issue or pull request's current state.
+    var subjectRef: GitHubClient.SubjectRef? {
+        guard let number else { return nil }
+        let parts = repository.fullName.split(separator: "/", maxSplits: 1)
+        guard parts.count == 2 else { return nil }
+        return GitHubClient.SubjectRef(owner: String(parts[0]), name: String(parts[1]), number: number)
+    }
+
     /// The subject's API URL rewritten as a github.com URL.
     var htmlURL: URL {
         let repo = repository.htmlUrl
@@ -73,6 +81,18 @@ extension GitHubNotification {
         case "approval_requested": "Approval requested"
         default: reason.replacingOccurrences(of: "_", with: " ").capitalized
         }
+    }
+
+    /// The row for this notification, using `subject` (from `GitHubClient.lookUp`) for state, CI and review.
+    func feedItem(subject details: FeedItem?) -> FeedItem {
+        var item = feedItem
+        if let details {
+            item.kind = details.kind
+            item.author = details.author
+            item.checkStatus = details.checkStatus
+            item.reviewDecision = details.reviewDecision
+        }
+        return item
     }
 
     var feedItem: FeedItem {

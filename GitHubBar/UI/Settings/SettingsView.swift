@@ -1,5 +1,7 @@
+import KeyboardShortcuts
 import ServiceManagement
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     var body: some View {
@@ -24,6 +26,7 @@ private struct AccountSettings: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     private static let newTokenURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo,notifications&description=GitHubBar")!
+    private static let tokenDocsURL = URL(string: "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic")!
 
     var body: some View {
         @Bindable var state = state
@@ -55,12 +58,16 @@ private struct AccountSettings: View {
             } header: {
                 Text("GitHub")
             } footer: {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text("Use a classic token with the **repo** and **notifications** scopes. Fine-grained tokens can't read notifications. The token is stored in your Keychain.")
-                    Link("Create a token on GitHub…", destination: Self.newTokenURL)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Link("Create a token on GitHub", destination: Self.newTokenURL)
+                        Link("About personal access tokens", destination: Self.tokenDocsURL)
+                    }
+                    .foregroundStyle(Primer.accentFg)
                 }
                 .font(.footnote)
-                .foregroundStyle(.secondary)
             }
 
             Section("General") {
@@ -70,6 +77,7 @@ private struct AccountSettings: View {
                             .tag(seconds)
                     }
                 }
+                KeyboardShortcuts.Recorder("Open GitHubBar from anywhere", name: .togglePopover)
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         do {
@@ -104,6 +112,9 @@ private struct AccountSettings: View {
 private struct TabsSettings: View {
     @Environment(AppState.self) private var state
     @State private var selection: UUID?
+    @State private var exportDocument: TabsDocument?
+    @State private var isImporting = false
+    @State private var transferMessage: String?
 
     var body: some View {
         @Bindable var state = state
@@ -140,8 +151,30 @@ private struct TabsSettings: View {
                     .buttonStyle(.borderless)
                     .disabled(selection == nil)
                     Spacer()
+                    Button {
+                        isImporting = true
+                    } label: {
+                        Octicon(name: "download").frame(width: 24, height: 20)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Import tabs from a file")
+                    Button {
+                        exportDocument = (try? state.exportTabs()).map(TabsDocument.init)
+                    } label: {
+                        Octicon(name: "upload").frame(width: 24, height: 20)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Export tabs to a file")
                 }
                 .padding(4)
+
+                if let transferMessage {
+                    Text(transferMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                }
             }
             .frame(width: 220)
             .padding([.leading, .vertical], 12)
@@ -157,6 +190,26 @@ private struct TabsSettings: View {
         }
         .onAppear {
             if selection == nil { selection = state.tabs.first?.id }
+        }
+        .fileExporter(
+            isPresented: Binding(get: { exportDocument != nil }, set: { if !$0 { exportDocument = nil } }),
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "GitHubBar Tabs"
+        ) { result in
+            if case .success = result { transferMessage = "Exported \(state.tabs.count) tabs." }
+        }
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
+            do {
+                let url = try result.get()
+                let accessing = url.startAccessingSecurityScopedResource()
+                defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                let count = try state.importTabs(from: Data(contentsOf: url))
+                transferMessage = "Imported \(count) tabs."
+                selection = state.tabs.last?.id
+            } catch {
+                transferMessage = "Couldn't import: not a GitHubBar tabs file."
+            }
         }
     }
 
@@ -197,5 +250,22 @@ private struct TabsSettings: View {
         self.selection = nil
         state.tabs.remove(at: index)
         self.selection = state.tabs.indices.contains(index) ? state.tabs[index].id : state.tabs.last?.id
+    }
+}
+
+/// Wraps exported tab JSON for `fileExporter`.
+private struct TabsDocument: FileDocument {
+    static let readableContentTypes: [UTType] = [.json]
+
+    let data: Data
+
+    init(data: Data) { self.data = data }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }

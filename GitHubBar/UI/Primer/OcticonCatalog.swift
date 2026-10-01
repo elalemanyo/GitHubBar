@@ -61,5 +61,13 @@ enum OcticonCatalog {
         "versions",
         "history",
         "archive",
+        "read",
+        "unread",
+        "bell-slash",
+        "question",
+        "download",
+        "upload",
+        "moon",
+        "x",
     ]
 }

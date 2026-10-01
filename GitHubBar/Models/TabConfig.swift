@@ -37,13 +37,42 @@ enum AttentionRule: String, Codable, CaseIterable, Identifiable {
 }
 
 struct TabConfig: Codable, Identifiable, Hashable {
-    var id = UUID()
+    var id: UUID
     var title: String
     var icon: String
     var source: TabSource
     var query: String
     var attention: AttentionRule
-    var isEnabled = true
+    var isEnabled: Bool
+    /// Post a macOS notification when new items appear.
+    var notify: Bool
+
+    init(id: UUID = UUID(), title: String, icon: String, source: TabSource, query: String,
+         attention: AttentionRule, isEnabled: Bool = true, notify: Bool = false) {
+        self.id = id
+        self.title = title
+        self.icon = icon
+        self.source = source
+        self.query = query
+        self.attention = attention
+        self.isEnabled = isEnabled
+        self.notify = notify
+    }
+
+    /// Tolerates missing keys so tabs saved by older versions (or hand-edited exports) still load.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? "Untitled"
+        icon = try container.decodeIfPresent(String.self, forKey: .icon) ?? "filter"
+        source = try container.decodeIfPresent(TabSource.self, forKey: .source) ?? .search
+        query = try container.decodeIfPresent(String.self, forKey: .query) ?? ""
+        attention = try container.decodeIfPresent(AttentionRule.self, forKey: .attention) ?? .never
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        notify = try container.decodeIfPresent(Bool.self, forKey: .notify) ?? false
+    }
+
+    var requestSignature: String { "\(source.rawValue)|\(query)" }
 
     /// Link to the same results on github.com.
     var webURL: URL {

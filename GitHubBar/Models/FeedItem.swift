@@ -21,13 +21,13 @@ struct FeedItem: Identifiable, Hashable {
     enum ReviewDecision: Hashable { case approved, changesRequested, reviewRequired }
 
     let id: String
-    let kind: Kind
+    var kind: Kind
     let title: String
     let repository: String
     let number: Int?
     let url: URL
     let updatedAt: Date
-    let author: String?
+    var author: String?
     /// Short context line, e.g. the notification reason.
     let detail: String?
     var isUnread = false
@@ -42,4 +42,6 @@ struct TabResult {
     var items: [FeedItem] = []
     var totalCount = 0
     var error: String?
+    /// Source and query that produced the items, so a query edit isn't mistaken for new items.
+    var signature = ""
 }

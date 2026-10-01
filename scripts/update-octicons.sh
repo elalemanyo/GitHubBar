@@ -18,6 +18,7 @@ ICONS=(
   star heart bookmark tag globe filter gear plus trash link-external
   milestone project-roadmap package dependabot copilot hubot
   git-commit git-branch versions history archive
+  read unread bell-slash question download upload moon x
 )
 
 TMP="$(mktemp -d)"
