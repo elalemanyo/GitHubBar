@@ -125,6 +125,8 @@ struct PopoverView: View {
 
     private var menu: some View {
         Menu {
+            Text("GitHubBar \(Updater.versionDescription)")
+            Divider()
             if let version = Updater.shared.availableVersion {
                 Button("Install Update \(version)…") { Updater.shared.checkForUpdates() }
                 Divider()

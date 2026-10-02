@@ -52,6 +52,7 @@ final class Updater: NSObject, SPUStandardUserDriverDelegate {
         controller.checkForUpdates(nil)
     }
 
+    /// e.g. "0.0.1 (3)".
     static var versionDescription: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"

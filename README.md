@@ -24,6 +24,12 @@ GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pu
 
 The app isn't notarized by Apple, so macOS blocks the first launch. Open **System Settings → Privacy & Security** and click **Open Anyway** (only once).
 
+Or remove the quarantine flag in Terminal:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/GitHubBar.app
+```
+
 GitHubBar keeps itself up to date with [Sparkle](https://sparkle-project.org). You can also use **Check for Updates…** in the gear menu.
 
 ## Setup
