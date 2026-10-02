@@ -1,6 +1,6 @@
 name: GitHubBar
 options:
-  bundleIdPrefix: com.elalemanyo
+  bundleIdPrefix: de.elalemanyo
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -48,11 +48,11 @@ targets:
         com.apple.security.files.user-selected.read-write: true
         # Lets the sandboxed app talk to Sparkle's installer service.
         com.apple.security.temporary-exception.mach-lookup.global-name:
-          - com.elalemanyo.GitHubBar-spks
-          - com.elalemanyo.GitHubBar-spki
+          - de.elalemanyo.GitHubBar-spks
+          - de.elalemanyo.GitHubBar-spki
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.elalemanyo.GitHubBar
+        PRODUCT_BUNDLE_IDENTIFIER: de.elalemanyo.GitHubBar
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_STYLE: Automatic
         COMBINE_HIDPI_IMAGES: YES

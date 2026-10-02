@@ -6,7 +6,7 @@ struct KeychainStore {
     let service: String
     let account: String
 
-    static let token = KeychainStore(service: "com.elalemanyo.GitHubBar", account: "github-token")
+    static let token = KeychainStore(service: "de.elalemanyo.GitHubBar", account: "github-token")
 
     func read() -> String? {
         var query = baseQuery

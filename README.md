@@ -111,4 +111,4 @@ Not sure where to start? Small things help too: trying new queries, improving th
 
 ## License
 
-MIT
+[MIT](LICENSE)
