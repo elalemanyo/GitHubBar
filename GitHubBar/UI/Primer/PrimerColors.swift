@@ -26,9 +26,10 @@ enum Primer {
     /// Row hover background (`control.transparent.bgHover`).
     static let rowHover = Color(light: 0x818B98, lightAlpha: 0.1, dark: 0x656C76, darkAlpha: 0.2)
 
-    /// Menu bar tint when something needs attention. Fixed, since the menu bar can be light or dark
-    /// independently of the app appearance.
-    static let menuBarAttention = NSColor(hex: 0xF0883E)
+    /// Menu bar tint when something needs attention: Primer's `accent.fg` for a light and a dark menu bar.
+    /// Picked by `MenuBarAppearance`, since the menu bar can be dark while the app is light (and vice versa).
+    static let menuBarAttentionLight = NSColor(hex: 0x0969DA)
+    static let menuBarAttentionDark = NSColor(hex: 0x4493F8)
 }
 
 extension Color {

@@ -93,7 +93,7 @@ struct PopoverView: View {
 
             if let tab = selectedTab, tab.source == .notifications, !currentItems.isEmpty {
                 let count = currentItems.count
-                IconButton(icon: "read", help: "Mark all \(count) as read") {
+                IconButton(icon: "eye", help: "Mark all \(count) as read") {
                     Task { await state.markAllRead(in: tab) }
                 }
                 IconButton(icon: "check", help: "Mark all \(count) as done") {

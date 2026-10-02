@@ -45,7 +45,7 @@ struct ItemRow: View {
 
             if isHovering || isSelected, let onMarkRead, let onMarkDone {
                 HStack(spacing: 0) {
-                    IconButton(icon: "read", help: "Mark as read · ⇧I", action: onMarkRead)
+                    IconButton(icon: "eye", help: "Mark as read · ⇧I", action: onMarkRead)
                     IconButton(icon: "check", help: "Done · E", action: onMarkDone)
                 }
                 .padding(.vertical, -4)

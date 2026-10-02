@@ -1,12 +1,20 @@
 import AppKit
 import SwiftUI
 
-/// The status item icon: a template image normally, tinted when something needs attention.
+/// The status item icon: a template image normally, tinted GitHub blue when something needs attention.
 struct MenuBarIcon: View {
     let needsAttention: Bool
 
+    private var appearance: MenuBarAppearance { .shared }
+
     var body: some View {
-        Image(nsImage: needsAttention ? Self.attention : Self.normal)
+        Image(nsImage: image)
+            .onAppear { appearance.start() }
+    }
+
+    private var image: NSImage {
+        guard needsAttention else { return Self.normal }
+        return appearance.isDark ? Self.attentionDark : Self.attentionLight
     }
 
     private static let normal: NSImage = {
@@ -16,5 +24,6 @@ struct MenuBarIcon: View {
         return image
     }()
 
-    private static let attention: NSImage = normal.tinted(with: Primer.menuBarAttention)
+    private static let attentionLight: NSImage = normal.tinted(with: Primer.menuBarAttentionLight)
+    private static let attentionDark: NSImage = normal.tinted(with: Primer.menuBarAttentionDark)
 }
