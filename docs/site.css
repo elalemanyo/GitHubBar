@@ -708,17 +708,29 @@ img {
   font-weight: 500;
 }
 
+/* Like GitHub's timeline: the line hangs from the comment box (under its left edge, past the avatar
+   column) and runs through the center of each event badge. */
 .Events {
-  margin-left: 20px;
-  padding: 8px 0 0 36px;
-  border-left: 2px solid var(--borderColor-muted);
+  position: relative;
+  margin-left: 56px;
+  padding-top: 4px;
+}
+
+.Events::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 16px;
+  left: 15px;
+  width: 2px;
+  background: var(--borderColor-muted);
 }
 
 .Event {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: -52px;
   padding: 12px 0;
   color: var(--fgColor-muted);
 }
@@ -990,7 +1002,7 @@ img {
   }
 
   .Events {
-    margin-left: 16px;
+    margin-left: 0;
   }
 
   .Footer nav {

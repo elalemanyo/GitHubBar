@@ -266,7 +266,7 @@ const FEATURES = [
     labels: ["feature", "ai"],
     branch: "feature/ai-prompt",
     commit: COMMITS.aiPrompt,
-    version: "v0.0.3",
+    version: "v0.0.4",
     body: `
       <p>Don't remember whether it's <code>review-requested:</code> or <code>reason:review_requested</code>? Click <strong>Copy AI Prompt</strong> in the tab editor.</p>
       <p>The prompt contains the complete syntax for that tab, search or notifications, and its current query. Paste it into Claude, ChatGPT or any assistant, describe what you want in your own words, and paste the one-line answer back:</p>
@@ -590,7 +590,7 @@ async function loadRelease() {
     };
     applyRelease();
   } catch {
-    // Keep the static fallback: "v0.0.3" and a link to the latest release page.
+    // Keep the static fallback: "v0.0.4" and a link to the latest release page.
   }
 }
 
