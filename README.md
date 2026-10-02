@@ -7,8 +7,8 @@ GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pu
 **Website:** [elalemanyo.github.io/GitHubBar](https://elalemanyo.github.io/GitHubBar/)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-dark.png">
-  <img width="1280" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status" src="docs/screenshots/hero-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-dark.jpg">
+  <img width="1280" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status" src="docs/screenshots/hero-light.jpg">
 </picture>
 
 ## Features

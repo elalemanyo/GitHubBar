@@ -182,16 +182,6 @@ img {
   font-weight: 600;
 }
 
-.Header-actions {
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.Header-actions .Counter {
-  margin-left: -2px;
-}
-
 /* MARK: Hero (GitHub Changelog post style) */
 
 .Hero {
@@ -972,7 +962,6 @@ img {
     padding-inline: 16px;
   }
 
-  .Header-actions .btn-label,
   .Box-header .filters {
     display: none;
   }

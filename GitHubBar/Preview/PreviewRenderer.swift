@@ -21,7 +21,11 @@ enum PreviewRenderer {
         var isDark: Bool { self == .dark }
     }
 
+    /// The README cover (docs/githubbar.png), used as the desktop wallpaper in the scenes.
+    private static var cover: NSImage?
+
     static func run(to folder: URL) {
+        cover = NSImage(contentsOf: folder.deletingLastPathComponent().appendingPathComponent("githubbar.png"))
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         // Show a global shortcut in the Account pane; cleared again below.
         KeyboardShortcuts.setShortcut(.init(.g, modifiers: [.option, .command]), for: .togglePopover)
@@ -32,9 +36,14 @@ enum PreviewRenderer {
                 let url = folder.appendingPathComponent("\(name)-\(theme.rawValue).png")
                 try? rep.representation(using: .png, properties: [:])?.write(to: url)
             }
+            // Desktop scenes have no transparency and a photo-like wallpaper: JPEG is a fraction of the size.
+            func saveScene(_ rep: NSBitmapImageRep, _ name: String) {
+                let url = folder.appendingPathComponent("\(name)-\(theme.rawValue).jpg")
+                try? rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])?.write(to: url)
+            }
 
             let inbox = DemoData.makeState(selectedTab: DemoData.inbox)
-            save(hero(inbox, theme: theme), "hero")
+            saveScene(hero(inbox, theme: theme), "hero")
             save(popoverCard(inbox, selectedItemID: "n1", theme: theme), "popover-inbox")
             save(popoverCard(DemoData.makeState(selectedTab: DemoData.reviews), theme: theme), "popover-reviews")
             save(popoverCard(DemoData.makeState(selectedTab: DemoData.mine), theme: theme), "popover-mine")
@@ -52,8 +61,8 @@ enum PreviewRenderer {
                 TabsSettings(selection: DemoData.work.id, editorMessage: "5 of 6 unread notifications")
             }, "settings-tabs-notifications")
 
-            save(menuBarStrip(theme: theme), "menubar")
-            save(notificationScene(theme: theme), "notification")
+            saveScene(menuBarStrip(theme: theme), "menubar")
+            saveScene(notificationScene(theme: theme), "notification")
         }
 
         NSApp.appearance = nil
@@ -78,13 +87,14 @@ enum PreviewRenderer {
     private static func hero(_ state: AppState, theme: Theme) -> NSBitmapImageRep {
         let popover = snapshot(PopoverView().environment(state), size: popoverSize, theme: theme)
         let wallpaper = wallpaper(size: heroSize, theme: theme)
-        let iconX: CGFloat = 760
-
         return canvas(size: heroSize, theme: theme) { bounds in
             wallpaper.draw(in: bounds)
-            drawMenuBar(in: NSRect(x: 0, y: bounds.maxY - menuBarHeight, width: bounds.width, height: menuBarHeight),
-                        iconX: iconX, lit: true, theme: theme)
-            let frame = NSRect(x: iconX - popoverSize.width / 2, y: bounds.maxY - menuBarHeight - 8 - popoverSize.height,
+
+            let iconX = drawMenuBar(in: NSRect(x: 0, y: bounds.maxY - menuBarHeight, width: bounds.width, height: menuBarHeight),
+                                    lit: true, theme: theme)
+            // Centered under the icon, but kept on screen like macOS does.
+            let x = min(iconX - popoverSize.width / 2, bounds.maxX - popoverSize.width - 8)
+            let frame = NSRect(x: x, y: bounds.maxY - menuBarHeight - 8 - popoverSize.height,
                                width: popoverSize.width, height: popoverSize.height)
             drawCard(popover, in: frame, radius: 12, theme: theme)
         }
@@ -118,34 +128,39 @@ enum PreviewRenderer {
 
     /// A Settings pane inside a drawn window frame.
     private static func settingsCard(tab: String, theme: Theme, @ViewBuilder content: () -> some View) -> NSBitmapImageRep {
+        card(settingsImage(tab: tab, theme: theme, content: content), radius: 12, theme: theme)
+    }
+
+    private static func settingsImage(tab: String, theme: Theme, @ViewBuilder content: () -> some View) -> NSImage {
         let state = DemoData.makeState(includeWork: true)
         // A bit taller than the real window (460) so the whole tab editor fits.
         let size = NSSize(width: 680, height: settingsHeight + 57)
-        let image = snapshot(SettingsWindowFrame(selected: tab) { content() }.environment(state), size: size, theme: theme)
-        return card(image, radius: 12, theme: theme)
+        return snapshot(SettingsWindowFrame(selected: tab) { content() }.environment(state), size: size, theme: theme)
     }
 
     /// The right half of a menu bar with the highlighted icon.
     private static func menuBarStrip(theme: Theme) -> NSBitmapImageRep {
         let size = NSSize(width: 560, height: 90)
-        let wallpaper = wallpaper(size: NSSize(width: 1280, height: 800), theme: theme)
+        let wallpaper = wallpaper(size: heroSize, theme: theme)
         return canvas(size: size, theme: theme) { bounds in
-            wallpaper.draw(in: bounds, from: NSRect(x: 720, y: 800 - size.height, width: size.width, height: size.height),
+            wallpaper.draw(in: bounds, from: NSRect(x: heroSize.width - size.width, y: heroSize.height - size.height,
+                                                    width: size.width, height: size.height),
                            operation: .copy, fraction: 1)
-            drawMenuBar(in: NSRect(x: -720, y: bounds.maxY - menuBarHeight, width: 1280, height: menuBarHeight),
-                        iconX: 760, lit: true, theme: theme, showAppMenus: false)
+            drawMenuBar(in: NSRect(x: bounds.maxX - 1280, y: bounds.maxY - menuBarHeight, width: 1280, height: menuBarHeight),
+                        lit: true, theme: theme, showAppMenus: false)
         }
     }
 
     /// A macOS notification banner for a new review request.
     private static func notificationScene(theme: Theme) -> NSBitmapImageRep {
         let size = NSSize(width: 560, height: 190)
-        let wallpaper = wallpaper(size: NSSize(width: 1280, height: 800), theme: theme)
+        let wallpaper = wallpaper(size: heroSize, theme: theme)
         return canvas(size: size, theme: theme) { bounds in
-            wallpaper.draw(in: bounds, from: NSRect(x: 720, y: 610, width: size.width, height: size.height),
+            wallpaper.draw(in: bounds, from: NSRect(x: heroSize.width - size.width, y: heroSize.height - size.height,
+                                                    width: size.width, height: size.height),
                            operation: .copy, fraction: 1)
-            drawMenuBar(in: NSRect(x: -720, y: bounds.maxY - menuBarHeight, width: 1280, height: menuBarHeight),
-                        iconX: 760, lit: true, theme: theme, showAppMenus: false)
+            drawMenuBar(in: NSRect(x: bounds.maxX - 1280, y: bounds.maxY - menuBarHeight, width: 1280, height: menuBarHeight),
+                        lit: true, theme: theme, showAppMenus: false)
             let banner = NSRect(x: bounds.maxX - 16 - 360, y: bounds.maxY - menuBarHeight - 12 - 84, width: 360, height: 84)
             drawNotification(in: banner, theme: theme)
         }
@@ -153,8 +168,11 @@ enum PreviewRenderer {
 
     // MARK: - Drawing
 
-    private static func drawMenuBar(in rect: NSRect, iconX: CGFloat, lit: Bool, theme: Theme, showAppMenus: Bool = true) {
-        (theme.isDark ? NSColor.black.withAlphaComponent(0.35) : NSColor.white.withAlphaComponent(0.55)).setFill()
+    /// Draws a menu bar with app menus on the left and status items packed against the right edge:
+    /// GitHubBar's icon, a few system items and the clock. Returns the icon's center x.
+    @discardableResult
+    private static func drawMenuBar(in rect: NSRect, lit: Bool, theme: Theme, showAppMenus: Bool = true) -> CGFloat {
+        (theme.isDark ? NSColor.black.withAlphaComponent(0.6) : NSColor.white.withAlphaComponent(0.55)).setFill()
         rect.fill()
 
         let text = theme.isDark ? NSColor.white : NSColor.black
@@ -170,24 +188,28 @@ enum PreviewRenderer {
             }
         }
 
-        // GitHubBar's icon, then a few system items and the clock to its right.
+        // Right to left: clock, Control Center, Spotlight, Wi-Fi, battery, then GitHubBar.
+        var x = rect.maxX - 14
+        let clock = NSAttributedString(string: "Fri 2 Oct  9:41",
+                                       attributes: [.font: NSFont.systemFont(ofSize: 13, weight: .medium), .foregroundColor: text])
+        x -= clock.size().width
+        clock.draw(at: NSPoint(x: x, y: midY - clock.size().height / 2))
+
+        for symbol in ["switch.2", "magnifyingglass", "wifi", "battery.75percent"] {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            guard let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration)?.tinted(with: text) else { continue }
+            x -= 18 + image.size.width
+            image.draw(in: NSRect(x: x, y: midY - image.size.height / 2, width: image.size.width, height: image.size.height))
+        }
+
         let mark = NSImage(named: "mark-github")!
         let icon = lit
             ? mark.tinted(with: theme.isDark ? Primer.menuBarAttentionDark : Primer.menuBarAttentionLight)
             : mark.tinted(with: text)
-        icon.draw(in: NSRect(x: rect.minX + iconX - 8, y: midY - 8, width: 16, height: 16))
-
-        var x = rect.minX + iconX + 30
-        for symbol in ["battery.75percent", "wifi", "magnifyingglass", "switch.2"] {
-            let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            guard let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-                .withSymbolConfiguration(configuration)?.tinted(with: text) else { continue }
-            image.draw(in: NSRect(x: x, y: midY - image.size.height / 2, width: image.size.width, height: image.size.height))
-            x += image.size.width + 18
-        }
-        let clock = NSAttributedString(string: "Fri 2 Oct  9:41",
-                                       attributes: [.font: NSFont.systemFont(ofSize: 13, weight: .medium), .foregroundColor: text])
-        clock.draw(at: NSPoint(x: x + 4, y: midY - clock.size().height / 2))
+        x -= 18 + 16
+        icon.draw(in: NSRect(x: x, y: midY - 8, width: 16, height: 16))
+        return x + 8
     }
 
     private static func drawNotification(in rect: NSRect, theme: Theme) {
@@ -252,7 +274,26 @@ enum PreviewRenderer {
     }
 
     /// Soft, blurred shapes in the colors of the README cover.
+    /// The README cover scaled to fill the desktop; the blurred gradient if it can't be found.
     private static func wallpaper(size: NSSize, theme: Theme) -> NSImage {
+        if let cover {
+            let rep = canvas(size: size, theme: theme) { bounds in
+                // Zoomed in and aligned right, so the octocat sits in the open left half instead of
+                // behind the popover.
+                let zoom: CGFloat = 1.2
+                let scale = max(bounds.width / cover.size.width, bounds.height / cover.size.height) * zoom
+                let drawn = NSSize(width: cover.size.width * scale, height: cover.size.height * scale)
+                cover.draw(in: NSRect(x: bounds.width - drawn.width, y: (bounds.height - drawn.height) / 2,
+                                      width: drawn.width, height: drawn.height))
+            }
+            let image = NSImage(size: size)
+            image.addRepresentation(rep)
+            return image
+        }
+        return gradientWallpaper(size: size, theme: theme)
+    }
+
+    private static func gradientWallpaper(size: NSSize, theme: Theme) -> NSImage {
         let base = canvas(size: size, theme: theme) { bounds in
             let top = theme.isDark ? NSColor(srgbRed: 0.10, green: 0.07, blue: 0.24, alpha: 1)
                                    : NSColor(srgbRed: 0.80, green: 0.74, blue: 1.00, alpha: 1)

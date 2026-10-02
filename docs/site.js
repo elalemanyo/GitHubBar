@@ -3,7 +3,7 @@
 
 const REPO = "elalemanyo/GitHubBar";
 const REPO_URL = `https://github.com/${REPO}`;
-const AUTHOR = "elalemanyo";
+const AUTHOR = "octocat";
 const AVATAR = `https://github.com/${AUTHOR}.png?size=80`;
 
 const COMMITS = {
@@ -37,8 +37,8 @@ const SHOTS = {
   "settings-account": { width: 760, height: 677, alt: "Account settings with token, global shortcut and updates" },
   "settings-tabs-search": { width: 760, height: 677, alt: "Tab editor for a search tab with the Copy AI Prompt button" },
   "settings-tabs-notifications": { width: 760, height: 677, alt: "Tab editor for a notification tab filtering two organizations" },
-  menubar: { width: 560, height: 90, alt: "Menu bar with the GitHubBar icon highlighted in GitHub blue", scene: true },
-  notification: { width: 560, height: 190, alt: "macOS notification for a new review request", scene: true },
+  menubar: { width: 560, height: 90, alt: "Menu bar with the GitHubBar icon highlighted in GitHub blue", scene: true, ext: "jpg" },
+  notification: { width: 560, height: 190, alt: "macOS notification for a new review request", scene: true, ext: "jpg" },
   themes: { width: 912, height: 600, alt: "The GitHubBar popover in light and dark mode", single: true },
 };
 
@@ -50,8 +50,8 @@ function shotHTML(name) {
   }
   return `
     <picture class="Shot ${shot.scene ? "Shot--scene" : ""}">
-      <source srcset="screenshots/${name}-dark.png" media="(prefers-color-scheme: dark)">
-      <img src="screenshots/${name}-light.png" width="${shot.width}" height="${shot.height}" alt="${shot.alt}" loading="lazy">
+      <source srcset="screenshots/${name}-dark.${shot.ext ?? "png"}" media="(prefers-color-scheme: dark)">
+      <img src="screenshots/${name}-light.${shot.ext ?? "png"}" width="${shot.width}" height="${shot.height}" alt="${shot.alt}" loading="lazy">
     </picture>`;
 }
 
@@ -515,7 +515,7 @@ function renderDetail(item) {
           <div class="Comment-box">
             <div class="Comment-header">
               <strong>${AUTHOR}</strong> ${isIssue ? "opened this issue" : "commented"}
-              <span class="role">Owner</span>
+              <span class="role">Member</span>
             </div>
             <div class="markdown-body">${shotHTML(item.shot)}${item.body}</div>
           </div>
@@ -553,13 +553,13 @@ function route() {
 
 window.addEventListener("hashchange", route);
 
-// MARK: - Latest release & stars
+// MARK: - Latest release
 
 let release = null;
 
 function applyRelease() {
   if (!release) return;
-  document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = release.version));
+  document.querySelectorAll("[data-version-suffix]").forEach((el) => (el.textContent = ` ${release.version}`));
   document.querySelectorAll("[data-download]").forEach((el) => (el.href = release.download));
   document.querySelectorAll("[data-release-link]").forEach((el) => (el.href = release.url));
   const date = document.querySelector("[data-release-date]");
@@ -568,13 +568,17 @@ function applyRelease() {
   }
 }
 
+// Cached briefly to spare GitHub's rate limit (60 requests per hour), but short enough that a new
+// release shows up within minutes.
+const CACHE_MINUTES = 5;
+
 async function loadJSON(key, url) {
-  const cached = storage((s) => s.getItem(key));
-  if (cached) return JSON.parse(cached);
+  const cached = storage((s) => JSON.parse(s.getItem(key) ?? "null"));
+  if (cached && Date.now() - cached.savedAt < CACHE_MINUTES * 60_000) return cached.json;
   const response = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!response.ok) throw new Error(response.statusText);
   const json = await response.json();
-  storage((s) => s.setItem(key, JSON.stringify(json)));
+  storage((s) => s.setItem(key, JSON.stringify({ savedAt: Date.now(), json })));
   return json;
 }
 
@@ -590,18 +594,7 @@ async function loadRelease() {
     };
     applyRelease();
   } catch {
-    // Keep the static fallback: "v0.0.4" and a link to the latest release page.
-  }
-}
-
-async function loadStars() {
-  try {
-    const json = await loadJSON("ghb-repo", `https://api.github.com/repos/${REPO}`);
-    const counter = document.querySelector("[data-stars]");
-    counter.textContent = json.stargazers_count.toLocaleString("en");
-    counter.hidden = false;
-  } catch {
-    // The Star button still works without a count.
+    // Without the API the page still works: no version number, links go to the latest release page.
   }
 }
 
@@ -611,4 +604,3 @@ renderLabelMenu();
 renderList();
 route();
 loadRelease();
-loadStars();

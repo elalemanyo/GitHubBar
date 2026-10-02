@@ -7,7 +7,11 @@
   <meta name="description" content="GitHubBar is a free, open source macOS menu bar app for GitHub notifications, pull requests and review requests. Styled after GitHub's Primer design system.">
   <meta property="og:title" content="GitHubBar">
   <meta property="og:description" content="Your GitHub notifications, pull requests and review requests, one click away in the macOS menu bar.">
-  <meta property="og:image" content="https://elalemanyo.github.io/GitHubBar/githubbar.png">
+  <meta property="og:image" content="https://elalemanyo.github.io/GitHubBar/screenshots/hero-light.jpg">
+  <meta property="og:image:width" content="2560">
+  <meta property="og:image:height" content="1344">
+  <meta property="og:image:alt" content="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status">
+  <meta name="twitter:image" content="https://elalemanyo.github.io/GitHubBar/screenshots/hero-light.jpg">
   <meta property="og:url" content="https://elalemanyo.github.io/GitHubBar/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/png" href="favicon.png">
@@ -39,17 +43,6 @@
         <span class="sep">/</span>
         <a href="./">GitHubBar</a>
       </nav>
-      <div class="Header-actions">
-        <a class="btn" href="https://github.com/elalemanyo/GitHubBar" aria-label="Star GitHubBar on GitHub">
-          <svg class="octicon" aria-hidden="true"><use href="#octicon-star"></use></svg>
-          <span class="btn-label">Star</span>
-          <span class="Counter" data-stars hidden></span>
-        </a>
-        <a class="btn btn-primary" data-download href="https://github.com/elalemanyo/GitHubBar/releases/latest">
-          <svg class="octicon" aria-hidden="true"><use href="#octicon-download"></use></svg>
-          <span class="btn-label">Download</span>
-        </a>
-      </div>
     </div>
   </header>
 
@@ -58,7 +51,7 @@
       <div class="Hero-meta">
         <a class="Hero-badge" data-release-link href="https://github.com/elalemanyo/GitHubBar/releases/latest">
           <svg class="octicon" aria-hidden="true"><use href="#octicon-tag"></use></svg>
-          <span>Latest release <span data-version>v0.0.4</span></span>
+          <span>Latest release<span data-version-suffix></span></span>
         </a>
         <span data-release-date></span>
       </div>
@@ -67,7 +60,7 @@
       <div class="Hero-actions">
         <a class="btn btn-primary btn-large" data-download href="https://github.com/elalemanyo/GitHubBar/releases/latest">
           <svg class="octicon" aria-hidden="true"><use href="#octicon-download"></use></svg>
-          Download <span data-version>v0.0.4</span>
+          <span>Download<span data-version-suffix></span></span>
         </a>
         <a class="btn btn-large" href="https://github.com/elalemanyo/GitHubBar">
           <svg class="octicon" aria-hidden="true"><use href="#octicon-mark-github"></use></svg>
@@ -81,8 +74,8 @@
         <li><svg class="octicon" aria-hidden="true"><use href="#octicon-check"></use></svg>Updates itself</li>
       </ul>
       <picture>
-        <source srcset="screenshots/hero-dark.png" media="(prefers-color-scheme: dark)">
-        <img class="Hero-image" src="screenshots/hero-light.png" width="1280" height="672" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status">
+        <source srcset="screenshots/hero-dark.jpg" media="(prefers-color-scheme: dark)">
+        <img class="Hero-image" src="screenshots/hero-light.jpg" width="1280" height="672" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status">
       </picture>
     </section>
 
@@ -100,7 +93,7 @@
             <svg class="octicon" aria-hidden="true"><use href="#octicon-issue-opened"></use></svg>
             Getting started with GitHubBar
           </div>
-          <div class="Pinned-meta">#1 opened by elalemanyo · Install, add your token, done</div>
+          <div class="Pinned-meta">#1 opened by octocat · Install, add your token, done</div>
         </a>
 
         <div class="ListToolbar">
