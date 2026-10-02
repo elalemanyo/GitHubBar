@@ -27,6 +27,34 @@ const LABELS = {
   design: { color: "f9d0c4", description: "Primer, Octicons and the GitHub look" },
 };
 
+// Screenshots in docs/screenshots (scripts/make-screenshots.sh), in points; each has -light and -dark.
+const SHOTS = {
+  "popover-inbox": { width: 480, height: 600, alt: "Inbox tab with a selected notification showing the read and done buttons" },
+  "popover-reviews": { width: 480, height: 600, alt: "Reviews tab listing pull requests waiting for your review" },
+  "popover-mine": { width: 480, height: 600, alt: "My pull requests with CI status and review decisions" },
+  "popover-shortcuts": { width: 480, height: 600, alt: "Keyboard shortcuts cheat sheet in the popover" },
+  "popover-update": { width: 480, height: 600, alt: "Update banner in the popover with an Install button" },
+  "settings-account": { width: 760, height: 677, alt: "Account settings with token, global shortcut and updates" },
+  "settings-tabs-search": { width: 760, height: 677, alt: "Tab editor for a search tab with the Copy AI Prompt button" },
+  "settings-tabs-notifications": { width: 760, height: 677, alt: "Tab editor for a notification tab filtering two organizations" },
+  menubar: { width: 560, height: 90, alt: "Menu bar with the GitHubBar icon highlighted in GitHub blue", scene: true },
+  notification: { width: 560, height: 190, alt: "macOS notification for a new review request", scene: true },
+  themes: { width: 912, height: 600, alt: "The GitHubBar popover in light and dark mode", single: true },
+};
+
+function shotHTML(name) {
+  const shot = SHOTS[name];
+  if (!shot) return "";
+  if (shot.single) {
+    return `<picture class="Shot"><img src="screenshots/${name}.png" width="${shot.width}" height="${shot.height}" alt="${shot.alt}" loading="lazy"></picture>`;
+  }
+  return `
+    <picture class="Shot ${shot.scene ? "Shot--scene" : ""}">
+      <source srcset="screenshots/${name}-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="screenshots/${name}-light.png" width="${shot.width}" height="${shot.height}" alt="${shot.alt}" loading="lazy">
+    </picture>`;
+}
+
 const icon = (name, extra = "") =>
   `<svg class="octicon ${extra}" aria-hidden="true"><use href="#octicon-${name}"></use></svg>`;
 
@@ -39,6 +67,7 @@ const GETTING_STARTED = {
   number: 1,
   title: "Getting started with GitHubBar",
   labels: ["documentation"],
+  shot: "settings-account",
   body: `
     <p>Welcome! GitHubBar lives in your menu bar and keeps your GitHub notifications, pull requests and review requests one click away. Setup takes about two minutes.</p>
     <h3>1. Install</h3>
@@ -59,6 +88,7 @@ const GETTING_STARTED = {
 const FEATURES = [
   {
     number: 2,
+    shot: "popover-reviews",
     title: "Tabs for anything you want to watch",
     labels: ["feature"],
     branch: "feature/tabs",
@@ -87,6 +117,7 @@ const FEATURES = [
   },
   {
     number: 3,
+    shot: "settings-tabs-notifications",
     title: "Notification tabs with filters",
     labels: ["feature", "notifications"],
     branch: "feature/notification-filters",
@@ -112,6 +143,7 @@ const FEATURES = [
   },
   {
     number: 4,
+    shot: "menubar",
     title: "The menu bar icon tells you when something needs you",
     labels: ["feature", "ui"],
     branch: "feature/attention",
@@ -130,6 +162,7 @@ const FEATURES = [
   },
   {
     number: 5,
+    shot: "popover-inbox",
     title: "Mark notifications as read or done",
     labels: ["notifications"],
     branch: "feature/read-and-done",
@@ -147,6 +180,7 @@ const FEATURES = [
   },
   {
     number: 6,
+    shot: "popover-mine",
     title: "Pull request state, checks and reviews at a glance",
     labels: ["feature"],
     branch: "feature/subject-state",
@@ -161,6 +195,7 @@ const FEATURES = [
   },
   {
     number: 7,
+    shot: "notification",
     title: "macOS notifications for new items",
     labels: ["feature", "notifications"],
     branch: "feature/system-notifications",
@@ -177,6 +212,7 @@ const FEATURES = [
   },
   {
     number: 8,
+    shot: "popover-shortcuts",
     title: "Keyboard shortcuts from GitHub's inbox",
     labels: ["keyboard"],
     branch: "feature/shortcuts",
@@ -225,6 +261,7 @@ const FEATURES = [
   },
   {
     number: 11,
+    shot: "settings-tabs-search",
     title: "Let your AI assistant write the query",
     labels: ["feature", "ai"],
     branch: "feature/ai-prompt",
@@ -257,6 +294,7 @@ const FEATURES = [
   },
   {
     number: 13,
+    shot: "popover-update",
     title: "Automatic updates",
     labels: ["updates"],
     branch: "feature/sparkle",
@@ -285,6 +323,7 @@ const FEATURES = [
   },
   {
     number: 15,
+    shot: "themes",
     title: "Looks and feels like GitHub",
     labels: ["design"],
     branch: "feature/primer",
@@ -478,7 +517,7 @@ function renderDetail(item) {
               <strong>${AUTHOR}</strong> ${isIssue ? "opened this issue" : "commented"}
               <span class="role">Owner</span>
             </div>
-            <div class="markdown-body">${item.body}</div>
+            <div class="markdown-body">${shotHTML(item.shot)}${item.body}</div>
           </div>
         </div>
         <div class="Events">${events}</div>

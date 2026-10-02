@@ -10,6 +10,12 @@ struct PopoverView: View {
     @State private var showShortcuts = false
     @FocusState private var isFocused: Bool
 
+    /// The parameters set the starting state for screenshots (see PreviewRenderer).
+    init(selectedItemID: String? = nil, showShortcuts: Bool = false) {
+        _selectedItemID = State(initialValue: selectedItemID)
+        _showShortcuts = State(initialValue: showShortcuts)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if !state.hasToken {

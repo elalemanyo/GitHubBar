@@ -6,6 +6,11 @@ GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pu
 
 **Website:** [elalemanyo.github.io/GitHubBar](https://elalemanyo.github.io/GitHubBar/)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-dark.png">
+  <img width="1280" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status" src="docs/screenshots/hero-light.png">
+</picture>
+
 ## Features
 
 - Tabs for anything you want to watch: notifications, review requests, your pull requests, failing CI, or any GitHub search
@@ -106,7 +111,10 @@ A quick map of the code:
 - `GitHubBar/Core/` - GitHub client (REST + GraphQL), Keychain, notification filter, system notifications
 - `GitHubBar/Store/` - app state: polling, results, attention logic
 - `GitHubBar/UI/` - popover, settings, and Primer-style components
-- `scripts/` - helpers to build the DMG, update the bundled [Octicons](https://primer.style/octicons/) and render the app icon
+- `scripts/` - helpers to build the DMG, update the bundled [Octicons](https://primer.style/octicons/), render the app icon and the screenshots
+- `docs/` - the [website](https://elalemanyo.github.io/GitHubBar/) (GitHub Pages)
+
+Screenshots on the website and in this README come from the real app with demo data: `scripts/make-screenshots.sh` renders them (light and dark) into `docs/screenshots/`. Rerun it after UI changes.
 
 ### Releasing
 

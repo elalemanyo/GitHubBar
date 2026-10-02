@@ -33,7 +33,7 @@ final class AppState {
     var selectedTabID: UUID? = nil
     /// While set and in the future, the menu bar icon isn't highlighted and no macOS notifications are posted.
     private(set) var snoozedUntil: Date? = nil {
-        didSet { defaults.set(snoozedUntil, forKey: Keys.snoozedUntil) }
+        didSet { if !isPreview { defaults.set(snoozedUntil, forKey: Keys.snoozedUntil) } }
     }
 
     private var token: String? = nil
@@ -53,6 +53,8 @@ final class AppState {
     @ObservationIgnored private var snoozeTask: Task<Void, Never>?
     @ObservationIgnored private var wakeObserver: NSObjectProtocol?
     @ObservationIgnored private let defaults = UserDefaults.standard
+    /// Screenshot mode (see PreviewRenderer): demo data only, no Keychain, network or persistence.
+    @ObservationIgnored private let isPreview: Bool
 
     /// Subject details older than this are refreshed even if the notification didn't change, to keep CI status current.
     private static let subjectMaxAge: TimeInterval = 600
@@ -64,7 +66,16 @@ final class AppState {
         static let snoozedUntil = "snoozedUntil"
     }
 
-    init() {
+    init(isPreview: Bool = false) {
+        self.isPreview = isPreview
+        guard !isPreview else {
+            token = "preview"
+            tabs = []
+            pollInterval = 120
+            seenItemIDs = [:]
+            return
+        }
+
         token = KeychainStore.token.read()
         tabs = Self.loadTabs(from: defaults) ?? TabPreset.defaults
         let storedInterval = defaults.double(forKey: Keys.pollInterval)
@@ -132,7 +143,7 @@ final class AppState {
 
     func startPolling() {
         pollTask?.cancel()
-        guard token != nil else { return }
+        guard token != nil, !isPreview else { return }
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.refresh()
@@ -143,7 +154,7 @@ final class AppState {
     }
 
     func refresh(force: Bool = false) async {
-        guard let token, !isRefreshing else { return }
+        guard let token, !isRefreshing, !isPreview else { return }
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -535,6 +546,7 @@ final class AppState {
     // MARK: - Persistence
 
     private func saveTabs() {
+        guard !isPreview else { return }
         if let data = try? JSONEncoder().encode(tabs) {
             defaults.set(data, forKey: Keys.tabs)
         }
@@ -546,6 +558,7 @@ final class AppState {
     }
 
     private func saveSeenItemIDs() {
+        guard !isPreview else { return }
         let encodable = Dictionary(uniqueKeysWithValues: seenItemIDs.map { ($0.key.uuidString, Array($0.value)) })
         if let data = try? JSONEncoder().encode(encodable) {
             defaults.set(data, forKey: Keys.seenItemIDs)
@@ -559,4 +572,21 @@ final class AppState {
             UUID(uuidString: key).map { ($0, Set(value)) }
         })
     }
+
+    // MARK: - Preview
+
+    #if DEBUG
+    /// Fills a preview state with demo data for screenshots.
+    func loadPreview(tabs: [TabConfig], results: [UUID: TabResult], unseen: Set<String>,
+                     selectedTabID: UUID?, viewer: GitHubClient.Viewer, snoozedUntil: Date? = nil) {
+        precondition(isPreview, "Demo data is only for preview states")
+        self.tabs = tabs
+        self.results = results
+        self.seenItemIDs = results.mapValues { Set($0.items.map(\.id)).subtracting(unseen) }
+        self.selectedTabID = selectedTabID
+        self.viewer = viewer
+        self.lastRefresh = Date().addingTimeInterval(-60)
+        self.snoozedUntil = snoozedUntil
+    }
+    #endif
 }

@@ -195,7 +195,7 @@ img {
 /* MARK: Hero (GitHub Changelog post style) */
 
 .Hero {
-  padding: 56px 0 40px;
+  padding-block: 56px 40px;
 }
 
 .Hero-meta {
@@ -265,7 +265,7 @@ img {
   border: 1px solid var(--borderColor-default);
   border-radius: var(--borderRadius-large);
   height: auto;
-  aspect-ratio: 1200 / 630;
+  aspect-ratio: 1280 / 672;
   object-fit: cover;
   background: var(--bgColor-muted);
 }
@@ -273,7 +273,7 @@ img {
 /* MARK: Section headings */
 
 .Section {
-  padding: 24px 0 64px;
+  padding-block: 24px 64px;
 }
 
 .Section-title {
@@ -798,6 +798,25 @@ img {
   overflow-wrap: break-word;
 }
 
+/* Screenshots rendered by scripts/make-screenshots.sh; most have their own transparent shadow margin. */
+.markdown-body .Shot {
+  display: block;
+  margin: -24px auto -8px;
+}
+
+.markdown-body .Shot img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.markdown-body .Shot--scene img {
+  margin: 8px auto 24px;
+  border-radius: var(--borderRadius-medium);
+  border: 1px solid var(--borderColor-muted);
+}
+
 .markdown-body > :first-child {
   margin-top: 0;
 }
@@ -947,7 +966,7 @@ img {
   }
 
   .Hero {
-    padding-top: 40px;
+    padding-block-start: 40px;
   }
 
   .Detail-layout {

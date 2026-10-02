@@ -58,7 +58,27 @@ Alternatively, run this in Terminal:
 TXT
 
 DMG="$OUT/GitHubBar-$VERSION.dmg"
-hdiutil create -quiet -volname "GitHubBar $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+# hdiutil occasionally writes a broken image on CI runners (v0.0.3 shipped one, so Sparkle
+# couldn't extract the update). Mount every image like Sparkle does and retry if that fails.
+for attempt in 1 2 3; do
+  rm -f "$DMG"
+  hdiutil create -quiet -volname "GitHubBar $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+  MOUNT=$(mktemp -d)
+  if hdiutil attach -quiet -nobrowse -noautoopen -readonly -mountpoint "$MOUNT" "$DMG" 2>/dev/null; then
+    VALID=$([[ -x "$MOUNT/GitHubBar.app/Contents/MacOS/GitHubBar" ]] && echo yes || echo no)
+    hdiutil detach -quiet "$MOUNT"
+    rmdir "$MOUNT"
+    [[ "$VALID" == yes ]] && break
+  else
+    rmdir "$MOUNT"
+  fi
+  if [[ $attempt == 3 ]]; then
+    echo "❌ Couldn't create a valid DMG" >&2
+    exit 1
+  fi
+  echo "⚠️ Invalid DMG (attempt $attempt), retrying…" >&2
+  sleep 5
+done
 rm -rf "$STAGE"
 echo "✅ $DMG ($(du -h "$DMG" | cut -f1))"
 # Let CI pick up the path.

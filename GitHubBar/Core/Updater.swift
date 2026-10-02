@@ -9,7 +9,7 @@ import Sparkle
 /// opens when the user clicks Install. https://sparkle-project.org/documentation/gentle-reminders
 @MainActor
 @Observable
-final class Updater: NSObject, SPUStandardUserDriverDelegate {
+final class Updater: NSObject {
     static let shared = Updater()
 
     /// Whether this build has a Sparkle public key, i.e. can verify and install updates.
@@ -60,8 +60,16 @@ final class Updater: NSObject, SPUStandardUserDriverDelegate {
         return "\(version) (\(build))"
     }
 
-    // MARK: - SPUStandardUserDriverDelegate
+    #if DEBUG
+    /// Shows the update banner without Sparkle, for screenshots.
+    func showPreviewUpdate(_ version: String?) {
+        availableVersion = version
+    }
+    #endif
+}
 
+// Sparkle's delegate protocol predates Swift concurrency; it's always called on the main thread.
+extension Updater: @preconcurrency SPUStandardUserDriverDelegate {
     var supportsGentleScheduledUpdateReminders: Bool { true }
 
     /// Let Sparkle show the alert only when it would get immediate focus (e.g. right after launch);

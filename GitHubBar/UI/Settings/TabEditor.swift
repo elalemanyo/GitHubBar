@@ -6,6 +6,11 @@ struct TabEditor: View {
     @Binding var tab: TabConfig
 
     @State private var testResult: String?
+
+    init(tab: Binding<TabConfig>, message: String? = nil) {
+        _tab = tab
+        _testResult = State(initialValue: message)
+    }
     @State private var isTesting = false
     @State private var showIconPicker = false
     @State private var notificationsDenied = false

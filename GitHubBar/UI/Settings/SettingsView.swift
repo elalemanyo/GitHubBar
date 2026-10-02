@@ -17,7 +17,7 @@ struct SettingsView: View {
 
 // MARK: - Account
 
-private struct AccountSettings: View {
+struct AccountSettings: View {
     @Environment(AppState.self) private var state
 
     @State private var tokenDraft = ""
@@ -136,12 +136,19 @@ private struct AccountSettings: View {
 
 // MARK: - Tabs
 
-private struct TabsSettings: View {
+struct TabsSettings: View {
     @Environment(AppState.self) private var state
     @State private var selection: UUID?
+    /// Shown in the editor, e.g. after Copy AI Prompt; set for screenshots.
+    private let editorMessage: String?
     @State private var exportDocument: TabsDocument?
     @State private var isImporting = false
     @State private var transferMessage: String?
+
+    init(selection: UUID? = nil, editorMessage: String? = nil) {
+        _selection = State(initialValue: selection)
+        self.editorMessage = editorMessage
+    }
 
     var body: some View {
         @Bindable var state = state
@@ -207,7 +214,7 @@ private struct TabsSettings: View {
             .padding([.leading, .vertical], 12)
 
             if let index = state.tabs.firstIndex(where: { $0.id == selection }) {
-                TabEditor(tab: $state.tabs[index])
+                TabEditor(tab: $state.tabs[index], message: editorMessage)
                     .id(state.tabs[index].id)
             } else {
                 Text("Select a tab, or add one with +")
