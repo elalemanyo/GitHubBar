@@ -5,6 +5,9 @@
   <img width="1280" alt="GitHubBar open in the macOS menu bar, showing unread notifications with their pull request state and CI status" src="docs/screenshots/hero-light.jpg">
 </picture>
 
+<br>
+<br>
+
 GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pull requests and review requests one click away. Styled after GitHub's own [Primer](https://primer.style/) design system.
 
 ## Features
