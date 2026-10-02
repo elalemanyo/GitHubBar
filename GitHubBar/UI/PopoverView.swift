@@ -292,11 +292,19 @@ struct PopoverView: View {
 private struct TabBar: View {
     @Environment(AppState.self) private var state
 
+    /// Which tabs show their title, from most to least room needed.
+    private enum Titles { case all, selected, none }
+
+    private var selectedID: UUID? { state.selectedTabID ?? state.enabledTabs.first?.id }
+
     var body: some View {
+        // Shrinks step by step, like GitHub's tab bars on narrow screens: all titles, then only the
+        // selected tab's title, then icons only (scrollable as a last resort).
         ViewThatFits(in: .horizontal) {
-            row(showTitles: true)
+            row(.all)
+            row(.selected)
             ScrollView(.horizontal, showsIndicators: false) {
-                row(showTitles: false)
+                row(.none)
             }
             // Hug the row's height so the active underline sits on the bottom border.
             .fixedSize(horizontal: false, vertical: true)
@@ -310,14 +318,14 @@ private struct TabBar: View {
         .background(Primer.canvasSubtle)
     }
 
-    private func row(showTitles: Bool) -> some View {
-        HStack(spacing: 4) {
+    private func row(_ titles: Titles) -> some View {
+        HStack(spacing: 2) {
             ForEach(Array(state.enabledTabs.enumerated()), id: \.element.id) { index, tab in
                 TabBarItem(
                     tab: tab,
                     shortcut: index < 9 ? "⌘\(index + 1)" : nil,
-                    showTitle: showTitles,
-                    isSelected: tab.id == (state.selectedTabID ?? state.enabledTabs.first?.id),
+                    showTitle: titles == .all || (titles == .selected && tab.id == selectedID),
+                    isSelected: tab.id == selectedID,
                     count: state.badgeCount(for: tab),
                     needsAttention: state.needsAttention(tab)
                 ) {
@@ -326,6 +334,7 @@ private struct TabBar: View {
             }
         }
         .fixedSize(horizontal: true, vertical: false)
+        .animation(.snappy(duration: 0.2), value: selectedID)
     }
 }
 
@@ -349,16 +358,24 @@ private struct TabBarItem: View {
                 Octicon(name: tab.icon)
                     .foregroundStyle(isSelected ? Primer.fgDefault : Primer.fgMuted)
                 if showTitle {
+                    // Semibold text is wider; reserve its width for every tab so selecting one doesn't
+                    // shift the others (the same trick as Primer's UnderlineNav).
                     Text(tab.title)
-                        .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                        .foregroundStyle(Primer.fgDefault)
+                        .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
+                        .hidden()
+                        .overlay {
+                            Text(tab.title)
+                                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                                .foregroundStyle(Primer.fgDefault)
+                                .lineLimit(1)
+                        }
                 }
                 if count > 0 {
                     CounterLabel(count: count, emphasized: needsAttention)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
             .padding(.vertical, 5)
             .background(RoundedRectangle(cornerRadius: 6).fill(isHovering ? Primer.rowHover : .clear))
             .padding(.vertical, 6)
@@ -624,6 +641,13 @@ private struct WindowObserver: NSViewRepresentable {
             observers.append(center.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
                 self?.onResignKey?()
             })
+            // MenuBarExtra places the window whenever it opens; re-center it right away, before it's drawn.
+            for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification, NSWindow.didBecomeKeyNotification] {
+                observers.append(center.addObserver(forName: name, object: window, queue: .main) { _ in
+                    MainActor.assumeIsolated { StatusItem.centerPopoverUnderIcon() }
+                })
+            }
+            StatusItem.centerPopoverUnderIcon()
         }
     }
 }

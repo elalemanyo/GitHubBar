@@ -17,6 +17,25 @@ enum StatusItem {
         button.performClick(nil)
     }
 
+    /// `MenuBarExtra` aligns its window's left edge with the status item, like a menu. Center it under
+    /// the icon instead (like a popover), kept on screen near the edges as macOS does.
+    static func centerPopoverUnderIcon() {
+        #if DEBUG
+        // The screenshot renderer's off-screen windows must stay off-screen.
+        guard PreviewRenderer.requestedFolder == nil else { return }
+        #endif
+        guard let window = popoverWindow, let button = button(), let buttonWindow = button.window,
+              let screen = buttonWindow.screen ?? window.screen else { return }
+        let icon = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        let visible = screen.visibleFrame
+        let margin: CGFloat = 8
+        var x = icon.midX - window.frame.width / 2
+        x = min(max(x, visible.minX + margin), visible.maxX - window.frame.width - margin)
+        // Only move when needed: setting the origin triggers another move notification.
+        guard abs(window.frame.origin.x - x) > 0.5 else { return }
+        window.setFrameOrigin(NSPoint(x: x, y: window.frame.origin.y))
+    }
+
     static func closePopover() {
         guard isPopoverOpen else { return }
         if let button = button() {
