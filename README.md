@@ -4,6 +4,8 @@
 
 GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pull requests and review requests one click away. Styled after GitHub's own [Primer](https://primer.style/) design system.
 
+**Website:** [elalemanyo.github.io/GitHubBar](https://elalemanyo.github.io/GitHubBar/)
+
 ## Features
 
 - Tabs for anything you want to watch: notifications, review requests, your pull requests, failing CI, or any GitHub search
