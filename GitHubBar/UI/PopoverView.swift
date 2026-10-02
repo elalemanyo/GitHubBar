@@ -32,6 +32,9 @@ struct PopoverView: View {
                         .frame(maxHeight: .infinity)
                 }
             }
+            if let version = Updater.shared.availableVersion {
+                UpdateBanner(version: version)
+            }
             Rectangle().fill(Primer.borderDefault).frame(height: 1)
             footer
         }
@@ -109,7 +112,7 @@ struct PopoverView: View {
 
             if let tab = selectedTab, state.hasToken {
                 IconButton(icon: "link-external", help: "Open “\(tab.title)” on GitHub") {
-                    NSWorkspace.shared.open(tab.webURL)
+                    StatusItem.open(tab.webURL)
                 }
             }
 
@@ -122,6 +125,10 @@ struct PopoverView: View {
 
     private var menu: some View {
         Menu {
+            if let version = Updater.shared.availableVersion {
+                Button("Install Update \(version)…") { Updater.shared.checkForUpdates() }
+                Divider()
+            }
             Button("Settings…", action: showSettings)
                 .keyboardShortcut(",")
             Button("Keyboard Shortcuts") { showShortcuts = true }
@@ -145,6 +152,14 @@ struct PopoverView: View {
         } label: {
             Octicon(name: "gear")
                 .foregroundStyle(Primer.fgMuted)
+                .overlay(alignment: .topTrailing) {
+                    if Updater.shared.availableVersion != nil {
+                        Circle()
+                            .fill(Primer.accentFg)
+                            .frame(width: 6, height: 6)
+                            .offset(x: 2, y: -2)
+                    }
+                }
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -163,6 +178,10 @@ struct PopoverView: View {
         }
 
         if press.modifiers.contains(.command) {
+            if press.key == .return {
+                openSelected(inBackground: true)
+                return .handled
+            }
             switch press.characters {
             case "r":
                 Task { await state.refresh(force: true) }
@@ -182,7 +201,7 @@ struct PopoverView: View {
         case .leftArrow: switchTab(by: -1); return .handled
         case .rightArrow: switchTab(by: 1); return .handled
         case .return: openSelected(); return .handled
-        case .escape: GlobalShortcut.closePopover(); return .handled
+        case .escape: StatusItem.closePopover(); return .handled
         default: break
         }
 
@@ -219,9 +238,9 @@ struct PopoverView: View {
         selectedItemID = items[min(max(current + offset, 0), items.count - 1)].id
     }
 
-    private func openSelected() {
+    private func openSelected(inBackground: Bool = false) {
         guard let item = currentItems.first(where: { $0.id == selectedItemID }) else { return }
-        state.open(item)
+        state.open(item, inBackground: inBackground)
     }
 
     /// Marks the selected notification read or done and moves the selection to the next row.
@@ -396,7 +415,7 @@ private struct TabContent: View {
                             item: item,
                             isNew: state.isNew(item, in: tab.id),
                             isSelected: item.id == selectedItemID,
-                            onOpen: { state.open(item) },
+                            onOpen: { state.open(item, inBackground: NSEvent.modifierFlags.contains(.command)) },
                             onMarkRead: notificationAction(for: item) { await state.markRead($0) },
                             onMarkDone: notificationAction(for: item) { await state.markDone($0) }
                         )
@@ -406,7 +425,7 @@ private struct TabContent: View {
 
                     if result.totalCount > result.items.count {
                         Button {
-                            NSWorkspace.shared.open(tab.webURL)
+                            StatusItem.open(tab.webURL, inBackground: NSEvent.modifierFlags.contains(.command))
                         } label: {
                             Text("Showing \(result.items.count) of \(result.totalCount) · View all on GitHub")
                                 .font(.system(size: 12))
@@ -433,6 +452,32 @@ extension TabContent {
     }
 }
 
+// MARK: - Update banner
+
+/// Primer accent `Flash`-style bar shown when Sparkle found an update the user hasn't seen yet.
+private struct UpdateBanner: View {
+    let version: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Octicon(name: "download")
+                .foregroundStyle(Primer.accentFg)
+            Text("GitHubBar \(version) is available")
+                .font(.system(size: 12))
+                .foregroundStyle(Primer.fgDefault)
+            Spacer()
+            Button("Install") { Updater.shared.checkForUpdates() }
+                .controlSize(.small)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Primer.accentFg.opacity(0.1))
+        .overlay(alignment: .top) {
+            Rectangle().fill(Primer.accentFg.opacity(0.3)).frame(height: 1)
+        }
+    }
+}
+
 // MARK: - Keyboard shortcuts help
 
 private struct ShortcutsOverlay: View {
@@ -445,6 +490,7 @@ private struct ShortcutsOverlay: View {
             ("J  ↓", "Next item"),
             ("K  ↑", "Previous item"),
             ("O  ↩", "Open in browser"),
+            ("⌘↩  ⌘-click", "Open in background"),
         ]),
         ("Notifications", [
             ("E", "Mark as done"),
@@ -562,6 +608,7 @@ private struct WindowObserver: NSViewRepresentable {
             observers.forEach { NotificationCenter.default.removeObserver($0) }
             observers = []
             guard let window else { return }
+            StatusItem.popoverWindow = window
             let center = NotificationCenter.default
             observers.append(center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
                 self?.onBecomeKey?()

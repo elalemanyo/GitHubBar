@@ -64,6 +64,7 @@ Commas mean "any of", a leading `-` excludes, and plain words match the title. S
 | `⌘1`–`⌘9`, `←` `→` | Switch tab |
 | `J` / `↓`, `K` / `↑` | Next / previous item |
 | `O` / `↩` | Open in browser |
+| `⌘↩` / `⌘`-click | Open in a background tab (keeps the popover open) |
 | `E` | Mark notification as done |
 | `⇧I` | Mark notification as read |
 | `⌘R` | Refresh |

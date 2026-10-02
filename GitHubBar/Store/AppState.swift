@@ -355,8 +355,8 @@ final class AppState {
             : "Couldn't mark \(failed.count) notifications as \(action)."
     }
 
-    func open(_ item: FeedItem) {
-        NSWorkspace.shared.open(item.url)
+    func open(_ item: FeedItem, inBackground: Bool = false) {
+        StatusItem.open(item.url, inBackground: inBackground)
         if item.notificationThreadID != nil {
             Task { await markRead(item) }
         }

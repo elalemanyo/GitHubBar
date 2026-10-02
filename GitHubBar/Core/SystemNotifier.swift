@@ -44,14 +44,33 @@ final class SystemNotifier: NSObject, UNUserNotificationCenterDelegate {
         center.add(UNNotificationRequest(identifier: "\(tab.id)-summary-\(Date().timeIntervalSince1970)", content: content, trigger: nil))
     }
 
+    /// Posts an "update available" notification, but only if the user already allowed notifications
+    /// (for tabs). We never ask for permission just for this.
+    func postUpdateAvailable(version: String) {
+        let center = center
+        Task {
+            guard await center.notificationSettings().authorizationStatus == .authorized else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "GitHubBar \(version) is available"
+            content.body = "Click to install the update."
+            content.userInfo = ["action": "update"]
+            try? await center.add(UNNotificationRequest(identifier: "update-\(version)", content: content, trigger: nil))
+        }
+    }
+
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
         let url = (info["url"] as? String).flatMap(URL.init(string:))
         let threadID = (info["threadID"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        let isUpdate = info["action"] as? String == "update"
         Task { @MainActor in
-            if let url { self.onOpen?(url, threadID) }
+            if isUpdate {
+                Updater.shared.checkForUpdates()
+            } else if let url {
+                self.onOpen?(url, threadID)
+            }
             completionHandler()
         }
     }
