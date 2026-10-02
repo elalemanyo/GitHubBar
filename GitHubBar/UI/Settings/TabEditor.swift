@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct TabEditor: View {
@@ -45,6 +46,8 @@ struct TabEditor: View {
                 HStack {
                     Button(isTesting ? "Testing…" : "Test Query", action: runTest)
                         .disabled(isTesting)
+                    Button("Copy AI Prompt", action: copyPrompt)
+                        .help("Copies a prompt with the full query syntax. Paste it into an AI assistant, describe what you want and paste the answer back here.")
                     if let testResult {
                         Text(testResult)
                             .foregroundStyle(.secondary)
@@ -116,6 +119,12 @@ struct TabEditor: View {
                 Task { notificationsDenied = !(await state.enableNotifications(for: tabID)) }
             }
         )
+    }
+
+    private func copyPrompt() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(tab.aiPrompt, forType: .string)
+        testResult = "Prompt copied. Paste it into your AI assistant."
     }
 
     private func runTest() {

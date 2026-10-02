@@ -51,6 +51,8 @@ The token is stored in your Keychain. Fine-grained tokens work for search tabs, 
 
 Every tab has a title, an icon and a query. Add, edit and reorder them in **Settings → Tabs**.
 
+Not sure how to write a query? Click **Copy AI Prompt** in the tab editor, paste it into your AI assistant, describe what you want to see, and paste the answer back.
+
 **Search tabs** use the same syntax as the search bar on github.com, for example `is:pr is:open review-requested:@me`. See [GitHub's search syntax](https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests).
 
 **Notification tabs** filter your unread notifications:
