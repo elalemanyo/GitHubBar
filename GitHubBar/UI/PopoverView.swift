@@ -125,6 +125,10 @@ struct PopoverView: View {
             Button("Settings…", action: showSettings)
                 .keyboardShortcut(",")
             Button("Keyboard Shortcuts") { showShortcuts = true }
+            if Updater.shared.isConfigured {
+                Button("Check for Updates…") { Updater.shared.checkForUpdates() }
+                    .disabled(!Updater.shared.canCheckForUpdates)
+            }
             Divider()
             if state.isSnoozed {
                 Button("Resume Highlighting", action: state.endSnooze)

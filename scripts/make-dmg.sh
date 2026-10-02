@@ -29,9 +29,15 @@ xcodebuild build -quiet \
   ${VERSION_OVERRIDES[@]+"${VERSION_OVERRIDES[@]}"}
 
 APP=build/dmg-derived/Build/Products/Release/GitHubBar.app
-# Re-sign ad hoc with hardened runtime so every nested binary has a consistent signature.
-# Pass the entitlements again, otherwise re-signing drops the sandbox and network access.
-codesign --force --deep --options runtime --entitlements GitHubBar/GitHubBar.entitlements --sign - "$APP"
+# Re-sign ad hoc with hardened runtime, inside out, as Sparkle documents for sandboxed apps.
+# No --deep: it would put the app's sandbox entitlements on Sparkle's helpers and break updates.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+codesign -f -s - -o runtime "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
+codesign -f -s - -o runtime --preserve-metadata=entitlements "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
+codesign -f -s - -o runtime "$SPARKLE/Versions/B/Autoupdate"
+codesign -f -s - -o runtime "$SPARKLE/Versions/B/Updater.app"
+codesign -f -s - -o runtime "$SPARKLE"
+codesign -f -s - -o runtime --entitlements GitHubBar/GitHubBar.entitlements "$APP"
 codesign --verify --deep --strict "$APP"
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist")

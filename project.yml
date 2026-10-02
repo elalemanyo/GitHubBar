@@ -8,6 +8,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: 3.1.0
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.10.0
 settings:
   base:
     SWIFT_VERSION: "5.10"
@@ -21,6 +24,7 @@ targets:
       - path: GitHubBar
     dependencies:
       - package: KeyboardShortcuts
+      - package: Sparkle
     info:
       path: GitHubBar/Info.plist
       properties:
@@ -28,6 +32,12 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHumanReadableCopyright: "Your GitHub inbox in the menu bar."
+        # Sparkle: the appcast is attached to every GitHub release by the release workflow.
+        SUFeedURL: https://github.com/elalemanyo/GitHubBar/releases/latest/download/appcast.xml
+        SUPublicEDKey: $(SPARKLE_PUBLIC_KEY)
+        SUEnableAutomaticChecks: true
+        # Required for sandboxed apps; the Downloader service isn't needed because we have network.client.
+        SUEnableInstallerLauncherService: true
         LSApplicationCategoryType: public.app-category.developer-tools
         LSUIElement: true
     entitlements:
@@ -36,6 +46,10 @@ targets:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
         com.apple.security.files.user-selected.read-write: true
+        # Lets the sandboxed app talk to Sparkle's installer service.
+        com.apple.security.temporary-exception.mach-lookup.global-name:
+          - com.elalemanyo.GitHubBar-spks
+          - com.elalemanyo.GitHubBar-spki
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.elalemanyo.GitHubBar
@@ -43,3 +57,10 @@ targets:
         CODE_SIGN_STYLE: Automatic
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Sparkle stays disabled without a public key, so Debug builds from Xcode never check for updates.
+        SPARKLE_PUBLIC_KEY: ""
+      configs:
+        Release:
+          # Public half of the Sparkle signing key; CI signs updates with the private half
+          # (SPARKLE_PRIVATE_KEY secret, see scripts/make-appcast.sh).
+          SPARKLE_PUBLIC_KEY: EE83FbrLIVz0s94n4Mav5DnmZZ4aFA/9FACzeY2sKlg=

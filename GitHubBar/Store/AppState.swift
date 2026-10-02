@@ -89,6 +89,7 @@ final class AppState {
         }
 
         GlobalShortcut.register()
+        _ = Updater.shared
         startPolling()
     }
 

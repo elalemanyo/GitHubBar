@@ -22,6 +22,8 @@ GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pu
 
 The app isn't notarized by Apple, so macOS blocks the first launch. Open **System Settings → Privacy & Security** and click **Open Anyway** (only once).
 
+GitHubBar keeps itself up to date with [Sparkle](https://sparkle-project.org). You can also use **Check for Updates…** in the gear menu.
+
 ## Setup
 
 1. [Create a classic personal access token](https://github.com/settings/tokens/new?scopes=repo,notifications&description=GitHubBar) with the `repo` and `notifications` scopes
@@ -93,7 +95,17 @@ A quick map of the code:
 - `GitHubBar/UI/` - popover, settings, and Primer-style components
 - `scripts/` - helpers to build the DMG, update the bundled [Octicons](https://primer.style/octicons/) and render the app icon
 
-Releases are built by GitHub Actions when a `v*` tag is pushed.
+### Releasing
+
+Push a tag and GitHub Actions does the rest:
+
+```sh
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+The workflow builds a universal DMG (`scripts/make-dmg.sh`), signs it for Sparkle and writes `appcast.xml` (`scripts/make-appcast.sh`), then publishes both on the GitHub release. Installed apps find the update through `releases/latest/download/appcast.xml`. Tags with a `-` (like `v0.2.0-beta.1`) become pre-releases, which installed apps ignore.
+
+Updates are signed with a Sparkle EdDSA key: the public key is `SPARKLE_PUBLIC_KEY` in `project.yml` (Release builds only, so Debug builds from Xcode never check for updates), the private key is the `SPARKLE_PRIVATE_KEY` repository secret.
 
 Not sure where to start? Small things help too: trying new queries, improving the docs, or sharing your favorite tabs.
 

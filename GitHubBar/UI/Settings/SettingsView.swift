@@ -24,6 +24,8 @@ private struct AccountSettings: View {
     @State private var isSaving = false
     @State private var tokenError: String?
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var checkForUpdates = Updater.shared.automaticallyChecksForUpdates
+    @State private var installUpdates = Updater.shared.automaticallyDownloadsUpdates
 
     private static let newTokenURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo,notifications&description=GitHubBar")!
     private static let tokenDocsURL = URL(string: "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic")!
@@ -90,6 +92,31 @@ private struct AccountSettings: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+
+            Section {
+                if Updater.shared.isConfigured {
+                    Toggle("Automatically check for updates", isOn: $checkForUpdates)
+                        .onChange(of: checkForUpdates) { _, enabled in
+                            Updater.shared.automaticallyChecksForUpdates = enabled
+                        }
+                    Toggle("Automatically download and install updates", isOn: $installUpdates)
+                        .disabled(!checkForUpdates)
+                        .onChange(of: installUpdates) { _, enabled in
+                            Updater.shared.automaticallyDownloadsUpdates = enabled
+                        }
+                }
+                LabeledContent("Version") {
+                    HStack {
+                        Text(Updater.versionDescription)
+                        if Updater.shared.isConfigured {
+                            Button("Check Now") { Updater.shared.checkForUpdates() }
+                                .disabled(!Updater.shared.canCheckForUpdates)
+                        }
+                    }
+                }
+            } header: {
+                Text("Updates")
             }
         }
         .formStyle(.grouped)
