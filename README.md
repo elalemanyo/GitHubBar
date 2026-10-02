@@ -1,5 +1,7 @@
 # GitHubBar
 
+<img width="1200" alt="GitHubBar: the Octocat as a bartender" src="docs/githubbar.png" />
+
 GitHubBar is a simple macOS menubar app that keeps your GitHub notifications, pull requests and review requests one click away. Styled after GitHub's own [Primer](https://primer.style/) design system.
 
 ## Features
